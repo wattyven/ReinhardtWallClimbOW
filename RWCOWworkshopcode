@@ -1,0 +1,208 @@
+rule("A = PLAYERPOS + (0, 1, 0)")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Reinhardt;
+	}
+
+	actions
+	{
+		Global.A = Position Of(Event Player);
+		Global.A = Global.A + Vector(0, 1, 0);
+		Wait(0.010, Ignore Condition);
+		Loop;
+	}
+}
+
+rule("B = A + FACING DIRECTION")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Reinhardt;
+	}
+
+	actions
+	{
+		Global.B = Facing Direction Of(Event Player);
+		Global.B = Global.B * 2;
+		Global.B = Global.A + Global.B;
+		Wait(0.010, Ignore Condition);
+		Loop;
+	}
+}
+
+rule("C = IS B VISIBLE")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Reinhardt;
+	}
+
+	actions
+	{
+		Global.C = Is In Line of Sight(Global.A, Global.B, Barriers Do Not Block LOS);
+		Wait(0.016, Ignore Condition);
+		Loop;
+	}
+}
+
+rule("WALLCLIMB")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Reinhardt;
+	}
+
+	conditions
+	{
+		Global.C == False;
+		Is Button Held(Event Player, Button(Jump)) == True;
+		Has Status(Event Player, Hacked) == False;
+		Has Status(Event Player, Knocked Down) == False;
+		Has Status(Event Player, Asleep) == False;
+		Has Status(Event Player, Frozen) == False;
+		Has Status(Event Player, Stunned) == False;
+		Has Status(Event Player, Rooted) == False;
+	}
+
+	actions
+	{
+		Apply Impulse(Event Player, Up, 6, To World, Cancel Contrary Motion);
+		Apply Impulse(Event Player, Right, 0.001, To World, Cancel Contrary Motion);
+		Apply Impulse(Event Player, Left, 0.001, To World, Cancel Contrary Motion);
+		Wait(0.100, Ignore Condition);
+		disabled Set Move Speed(Event Player, 130);
+		Loop If Condition Is True;
+		disabled Set Move Speed(Event Player, 100);
+	}
+}
+
+rule("Initialize number of double jumps in (D)")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Reinhardt;
+	}
+
+	actions
+	{
+		Event Player.D = 1;
+	}
+}
+
+rule("Allow double jump (E) if you are > 0.8 altitude, not holding jump button, and have double jumps (D)")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Reinhardt;
+	}
+
+	conditions
+	{
+		Altitude Of(Event Player) > 0.800;
+		Is Button Held(Event Player, Button(Jump)) == False;
+		Event Player.D > 0;
+	}
+
+	actions
+	{
+		Event Player.E = True;
+	}
+}
+
+rule("Disallow double jump (E) if you are out of jumps (D)")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Reinhardt;
+	}
+
+	conditions
+	{
+		Event Player.D <= 0;
+	}
+
+	actions
+	{
+		Event Player.E = False;
+	}
+}
+
+rule("If you jump while in the air and double jump is allowed (E), double jump and consume a charge (D)")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Reinhardt;
+	}
+
+	conditions
+	{
+		Event Player.E == True;
+		Is Button Held(Event Player, Button(Jump)) == True;
+	}
+
+	actions
+	{
+		Apply Impulse(Event Player, Up, 10, To World, Cancel Contrary Motion);
+		Event Player.D -= 1;
+	}
+}
+
+rule("Touching the ground resets your jump count (D) and disallows double jump (E)")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Reinhardt;
+	}
+
+	conditions
+	{
+		Is In Air(Event Player) != True;
+	}
+
+	actions
+	{
+		Event Player.D = 1;
+		Event Player.E = False;
+	}
+}
+
+rule("jank incarnate")
+{
+	event
+	{
+		Ongoing - Each Player;
+		All;
+		Reinhardt;
+	}
+
+	actions
+	{
+		disabled Disallow Button(Event Player, Button(Primary Fire));
+		disabled Disallow Button(Event Player, Button(Secondary Fire));
+		disabled Disallow Button(Event Player, Button(Ability 1));
+		disabled Disallow Button(Event Player, Button(Ability 2));
+		disabled Disallow Button(Event Player, Button(Ultimate));
+		disabled Disallow Button(Event Player, Button(Crouch));
+		disabled Disallow Button(Event Player, Button(Interact));
+		disabled Disallow Button(Event Player, Button(Melee));
+	}
+}
